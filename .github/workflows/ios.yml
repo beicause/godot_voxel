@@ -1,0 +1,83 @@
+name: 🍏 iOS Builds
+on:
+  push:
+    branches: [test-fn2-ios-simd]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Global Cache Settings
+env:
+  SCONS_CACHE_LIMIT_GB: 4
+
+jobs:
+  build:
+    # macOS with latest image
+    runs-on: "macos-latest"
+    name: ${{matrix.name}} ${{matrix.arch}}
+
+    strategy:
+      matrix:
+        arch: [arm64]
+        target: [template_release]
+        include:
+          - name: 4.4.1 Template
+            target: template_release
+            executable_name: godot.macos.template_release
+            godot_base_branch: "4.4.1-stable"
+
+    steps:
+      # Clone Godot
+      - uses: actions/checkout@v4
+        with:
+          repository: godotengine/godot
+          ref: ${{ matrix.godot_base_branch }}
+
+      # Clone our module under the correct directory
+      - uses: actions/checkout@v4
+        with:
+          path: modules/voxel
+
+      # Upload cache on completion and check it out now
+      - name: Load .scons_cache directory
+        id: macos-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{github.workspace}}/.scons_cache/
+          key: ${{matrix.executable_name}}-${{matrix.arch}}-${{matrix.godot_base_branch}}-${{github.ref}}-${{github.sha}}
+          restore-keys: |
+            ${{matrix.executable_name}}-${{matrix.arch}}-${{matrix.godot_base_branch}}-${{github.ref}}-${{github.sha}}
+            ${{matrix.executable_name}}-${{matrix.arch}}-${{matrix.godot_base_branch}}-${{github.ref}}
+            ${{matrix.executable_name}}-${{matrix.arch}}-${{matrix.godot_base_branch}}
+
+      # Use python 3.x release (works cross platform; best to keep self contained in it's own step)
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v5
+        with:
+          # Semantic version range syntax or exact version of a Python version
+          python-version: "3.x"
+
+      # Setup scons, print python version and scons version info, so if anything is broken it won't run the build.
+      - name: Configuring Python packages
+        run: |
+          python -c "import sys; print(sys.version)"
+          python -m pip install scons
+          python --version
+          scons --version
+
+      # macOS builds depend on Vulkan SDK
+      - name: Setup Vulkan SDK
+        run: |
+          sh misc/scripts/install_vulkan_sdk_macos.sh
+
+      # We should always be explicit with our flags usage here since it's gonna be sure to always set those flags
+      - name: Compilation
+        run: |
+          scons arch=${{matrix.arch}} verbose=yes warnings=extra werror=yes strict_checks=yes platform=ios tests=no target=${{matrix.target}} dev_build=no production=yes "cache_path=${{github.workspace}}/.scons_cache/" cache_limit=${{env.SCONS_CACHE_LIMIT_GB}}
+
+      # Make build available
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{matrix.executable_name}}.${{matrix.arch}}
+          path: bin/${{matrix.executable_name}}.${{matrix.arch}}
