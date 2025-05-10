@@ -18,6 +18,7 @@ void FastNoise2::set_encoded_node_tree(String data) {
 	if (data != _last_set_encoded_node_tree) {
 		_last_set_encoded_node_tree = data;
 		emit_changed();
+		_queue_update();
 	}
 }
 
@@ -75,6 +76,7 @@ void FastNoise2::set_seed(int seed) {
 	}
 	_seed = seed;
 	emit_changed();
+	_queue_update();
 }
 
 int FastNoise2::get_seed() const {
@@ -87,6 +89,7 @@ void FastNoise2::set_noise_type(NoiseType type) {
 	}
 	_noise_type = type;
 	emit_changed();
+	_queue_update();
 }
 
 FastNoise2::NoiseType FastNoise2::get_noise_type() const {
@@ -102,6 +105,7 @@ void FastNoise2::set_period(float p) {
 	}
 	_period = p;
 	emit_changed();
+	_queue_update();
 }
 
 float FastNoise2::get_period() const {
@@ -118,6 +122,7 @@ void FastNoise2::set_fractal_octaves(int octaves) {
 	}
 	_fractal_octaves = octaves;
 	emit_changed();
+	_queue_update();
 }
 
 void FastNoise2::set_fractal_type(FractalType type) {
@@ -126,6 +131,7 @@ void FastNoise2::set_fractal_type(FractalType type) {
 	}
 	_fractal_type = type;
 	emit_changed();
+	_queue_update();
 }
 
 FastNoise2::FractalType FastNoise2::get_fractal_type() const {
@@ -142,6 +148,7 @@ void FastNoise2::set_fractal_lacunarity(float lacunarity) {
 	}
 	_fractal_lacunarity = lacunarity;
 	emit_changed();
+	_queue_update();
 }
 
 float FastNoise2::get_fractal_lacunarity() const {
@@ -154,6 +161,7 @@ void FastNoise2::set_fractal_gain(float gain) {
 	}
 	_fractal_gain = gain;
 	emit_changed();
+	_queue_update();
 }
 
 float FastNoise2::get_fractal_gain() const {
@@ -166,6 +174,7 @@ void FastNoise2::set_fractal_ping_pong_strength(float s) {
 	}
 	_fractal_ping_pong_strength = s;
 	emit_changed();
+	_queue_update();
 }
 
 float FastNoise2::get_fractal_ping_pong_strength() const {
@@ -178,6 +187,7 @@ void FastNoise2::set_terrace_enabled(bool enable) {
 	}
 	_terrace_enabled = enable;
 	emit_changed();
+	_queue_update();
 }
 
 bool FastNoise2::is_terrace_enabled() const {
@@ -191,6 +201,7 @@ void FastNoise2::set_terrace_multiplier(float m) {
 	}
 	_terrace_multiplier = clamped_multiplier;
 	emit_changed();
+	_queue_update();
 }
 
 float FastNoise2::get_terrace_multiplier() const {
@@ -204,6 +215,7 @@ void FastNoise2::set_terrace_smoothness(float s) {
 	}
 	_terrace_smoothness = clamped_smoothness;
 	emit_changed();
+	_queue_update();
 }
 
 float FastNoise2::get_terrace_smoothness() const {
@@ -214,6 +226,7 @@ void FastNoise2::set_remap_enabled(bool enabled) {
 	if (enabled != _remap_enabled) {
 		_remap_enabled = enabled;
 		emit_changed();
+		_queue_update();
 	}
 }
 
@@ -225,6 +238,7 @@ void FastNoise2::set_remap_input_min(float min_value) {
 	if (min_value != _remap_src_min) {
 		_remap_src_min = min_value;
 		emit_changed();
+		_queue_update();
 	}
 }
 
@@ -236,6 +250,7 @@ void FastNoise2::set_remap_input_max(float max_value) {
 	if (max_value != _remap_src_max) {
 		_remap_src_max = max_value;
 		emit_changed();
+		_queue_update();
 	}
 }
 
@@ -247,6 +262,7 @@ void FastNoise2::set_remap_output_min(float min_value) {
 	if (min_value != _remap_dst_min) {
 		_remap_dst_min = min_value;
 		emit_changed();
+		_queue_update();
 	}
 }
 
@@ -258,6 +274,7 @@ void FastNoise2::set_remap_output_max(float max_value) {
 	if (max_value != _remap_dst_max) {
 		_remap_dst_max = max_value;
 		emit_changed();
+		_queue_update();
 	}
 }
 
@@ -271,6 +288,7 @@ void FastNoise2::set_cellular_distance_function(CellularDistanceFunction cdf) {
 	}
 	_cellular_distance_function = cdf;
 	emit_changed();
+	_queue_update();
 }
 
 FastNoise2::CellularDistanceFunction FastNoise2::get_cellular_distance_function() const {
@@ -283,6 +301,7 @@ void FastNoise2::set_cellular_return_type(CellularReturnType rt) {
 	}
 	_cellular_return_type = rt;
 	emit_changed();
+	_queue_update();
 }
 
 FastNoise2::CellularReturnType FastNoise2::get_cellular_return_type() const {
@@ -296,6 +315,7 @@ void FastNoise2::set_cellular_jitter(float jitter) {
 	}
 	_cellular_jitter = jitter;
 	emit_changed();
+	_queue_update();
 }
 
 float FastNoise2::get_cellular_jitter() const {
@@ -537,6 +557,7 @@ void FastNoise2::generate_buffer_3d(
 }
 
 void FastNoise2::update_generator() {
+	_update_queued = false;
 	if (_noise_type == TYPE_ENCODED_NODE_TREE) {
 		CharString cs = _last_set_encoded_node_tree.utf8();
 		// TODO FastNoise2 crashes if given an empty string.
@@ -660,6 +681,22 @@ math::Interval FastNoise2::get_estimated_output_range() const {
 	} else {
 		return math::Interval(-1.f, 1.f);
 	}
+}
+
+void FastNoise2::_queue_update() {
+	if (_update_queued) {
+		return;
+	}
+	callable_mp(this, &FastNoise2::_update).call_deferred();
+	_update_queued = true;
+}
+
+void FastNoise2::_update() {
+	if (!_update_queued) {
+		// Generator is already manually updated.
+		return;
+	}
+	update_generator();
 }
 
 void FastNoise2::_bind_methods() {

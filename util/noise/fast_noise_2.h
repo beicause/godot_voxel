@@ -207,6 +207,10 @@ public:
 	math::Interval get_estimated_output_range() const;
 
 private:
+	bool _update_queued = false;
+	void _queue_update();
+	void _update();
+
 	static void _bind_methods();
 
 	int _seed = 1337;
