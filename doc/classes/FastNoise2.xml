@@ -12,12 +12,35 @@
 	<tutorials>
 	</tutorials>
 	<methods>
+		<method name="generate_buffer_2d" qualifiers="const">
+			<return type="void" />
+			<param index="0" name="out_buffer" type="VoxelBuffer" />
+			<param index="1" name="origin" type="Vector2i" />
+			<param index="2" name="channel_index" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="generate_buffer_3d" qualifiers="const">
+			<return type="void" />
+			<param index="0" name="out_buffer" type="VoxelBuffer" />
+			<param index="1" name="origin" type="Vector3i" />
+			<param index="2" name="channel_index" type="int" />
+			<description>
+			</description>
+		</method>
 		<method name="generate_image" qualifiers="const">
 			<return type="void" />
 			<param index="0" name="image" type="Image" />
 			<param index="1" name="tileable" type="bool" />
 			<description>
 				Fills a greyscale image with noise values.
+			</description>
+		</method>
+		<method name="generate_image_located" qualifiers="const">
+			<return type="void" />
+			<param index="0" name="image" type="Image" />
+			<param index="1" name="origin" type="Vector2i" />
+			<description>
 			</description>
 		</method>
 		<method name="get_noise_2d_single" qualifiers="const">

@@ -458,13 +458,80 @@ void FastNoise2::generate_image(Ref<Image> image, bool tileable) const {
 	unsigned int i = 0;
 	for (int y = 0; y < image->get_height(); ++y) {
 		for (int x = 0; x < image->get_width(); ++x) {
-#ifdef DEBUG_ENABLED
-			CRASH_COND(i >= buffer.size());
-#endif
 			// Assuming -1..1 output. Some noise types can have different range though.
 			const float n = buffer[i] * 0.5f + 0.5f;
 			++i;
 			image->set_pixel(x, y, Color(n, n, n));
+		}
+	}
+}
+
+void FastNoise2::generate_image_located(Ref<Image> image, Vector2i origin) const {
+	ERR_FAIL_COND(!is_valid());
+	ERR_FAIL_COND(image.is_null());
+
+	StdVector<float> buffer;
+	buffer.resize(image->get_width() * image->get_height());
+
+	get_noise_2d_grid(origin, Vector2i(image->get_width(), image->get_height()), to_span(buffer));
+
+	unsigned int i = 0;
+	for (int y = 0; y < image->get_height(); ++y) {
+		for (int x = 0; x < image->get_width(); ++x) {
+			// Assuming -1..1 output. Some noise types can have different range though.
+			const float n = buffer[i] * 0.5f + 0.5f;
+			++i;
+			image->set_pixel(x, y, Color(n, n, n));
+		}
+	}
+}
+
+void FastNoise2::generate_buffer_2d(
+		Ref<voxel::godot::VoxelBuffer> out_buffer,
+		Vector2i origin,
+		unsigned int channel_index
+) const {
+	ERR_FAIL_COND(!is_valid());
+	ERR_FAIL_COND(out_buffer.is_null());
+
+	StdVector<float> buffer;
+	Vector3i size = out_buffer->get_size();
+	buffer.resize(size.x * size.z);
+
+	get_noise_2d_grid(origin, Vector2i(size.x, size.z), to_span(buffer));
+
+	unsigned int i = 0;
+	for (int z = 0; z < size.z; ++z) {
+		for (int x = 0; x < size.x; ++x) {
+			const float n = buffer[i];
+			++i;
+			out_buffer->set_voxel_f(n, x, 0, z, channel_index);
+		}
+	}
+}
+
+void FastNoise2::generate_buffer_3d(
+		Ref<voxel::godot::VoxelBuffer> out_buffer,
+		Vector3i origin,
+		unsigned int channel_index
+) const {
+	ERR_FAIL_COND(!is_valid());
+	ERR_FAIL_COND(out_buffer.is_null());
+
+	Vector3i size = out_buffer->get_size();
+	StdVector<float> buffer;
+	buffer.resize(size.x * size.y * size.z);
+
+	get_noise_3d_grid(origin, size, to_span(buffer));
+
+	unsigned int i = 0;
+	for (int z = 0; z < size.z; ++z) {
+		for (int y = 0; y < size.y; ++y) {
+			for (int x = 0; x < size.x; ++x) {
+				const float n = buffer[i];
+				++i;
+				out_buffer->set_voxel_f(n, x, y, z, channel_index);
+			}
 		}
 	}
 }
@@ -681,6 +748,16 @@ void FastNoise2::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_noise_3d_single", "pos"), &FastNoise2::get_noise_3d_single);
 
 	ClassDB::bind_method(D_METHOD("generate_image", "image", "tileable"), &FastNoise2::generate_image);
+
+	ClassDB::bind_method(D_METHOD("generate_image_located", "image", "origin"), &FastNoise2::generate_image_located);
+
+	ClassDB::bind_method(
+			D_METHOD("generate_buffer_3d", "out_buffer", "origin", "channel_index"), &FastNoise2::generate_buffer_3d
+	);
+
+	ClassDB::bind_method(
+			D_METHOD("generate_buffer_2d", "out_buffer", "origin", "channel_index"), &FastNoise2::generate_buffer_2d
+	);
 
 	ClassDB::bind_method(D_METHOD("update_generator"), &FastNoise2::update_generator);
 

@@ -17,7 +17,8 @@
 #pragma GCC diagnostic pop
 #endif
 
-#include <core/io/resource.h>
+#include "storage/voxel_buffer_gd.h"
+#include "util/godot/classes/resource.h"
 
 class Image;
 
@@ -187,12 +188,8 @@ public:
 	float get_noise_3d_single(Vector3 pos) const;
 
 	void get_noise_2d_series(Span<const float> src_x, Span<const float> src_y, Span<float> dst) const;
-	void get_noise_3d_series(
-			Span<const float> src_x,
-			Span<const float> src_y,
-			Span<const float> src_z,
-			Span<float> dst
-	) const;
+	void get_noise_3d_series(Span<const float> src_x, Span<const float> src_y, Span<const float> src_z, Span<float> dst)
+			const;
 
 	void get_noise_2d_grid(Vector2 origin, Vector2i size, Span<float> dst) const;
 	void get_noise_3d_grid(Vector3 origin, Vector3i size, Span<float> dst) const;
@@ -200,6 +197,12 @@ public:
 	void get_noise_2d_grid_tileable(Vector2i size, Span<float> dst) const;
 
 	void generate_image(Ref<Image> image, bool tileable) const;
+	void generate_image_located(Ref<Image> image, Vector2i origin) const;
+
+	void generate_buffer_2d(Ref<voxel::godot::VoxelBuffer> out_buffer, Vector2i origin, unsigned int channel_index)
+			const;
+	void generate_buffer_3d(Ref<voxel::godot::VoxelBuffer> out_buffer, Vector3i origin, unsigned int channel_index)
+			const;
 
 	math::Interval get_estimated_output_range() const;
 
