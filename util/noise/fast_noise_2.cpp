@@ -573,6 +573,13 @@ void FastNoise2::update_generator() {
 		ERR_FAIL_COND_MSG(cs.length() == 0, "Encoded node tree is empty.");
 		_generator = FastNoise::NewFromEncodedNodeTree(cs.get_data());
 		ERR_FAIL_COND_MSG(!is_valid(), "Encoded node tree is invalid.");
+		if (_remap_enabled) {
+			FastNoise::SmartNode<FastNoise::Remap> remap_node = FastNoise::New<FastNoise::Remap>();
+			remap_node->SetRemap(_remap_src_min, _remap_src_max, _remap_dst_min, _remap_dst_max);
+			remap_node->SetSource(_generator);
+			_generator = remap_node;
+		}
+
 		// TODO Maybe apply period modifier here?
 		// NoiseTool assumes we scale input coordinates so typical noise made in there has period 1...
 		return;
