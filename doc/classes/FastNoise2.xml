@@ -104,6 +104,8 @@
 		</member>
 		<member name="fractal_type" type="int" setter="set_fractal_type" getter="get_fractal_type" enum="FastNoise2.FractalType" default="0">
 		</member>
+		<member name="frequency" type="float" setter="set_frequency" getter="get_frequency" default="1.0">
+		</member>
 		<member name="noise_type" type="int" setter="set_noise_type" getter="get_noise_type" enum="FastNoise2.NoiseType" default="0">
 		</member>
 		<member name="period" type="float" setter="set_period" getter="get_period" default="64.0">

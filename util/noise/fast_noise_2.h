@@ -111,6 +111,9 @@ public:
 	void set_period(float p);
 	float get_period() const;
 
+	void set_frequency(float f);
+	float get_frequency() const;
+
 	// Fractal
 
 	void set_fractal_type(FractalType type);
@@ -219,6 +222,7 @@ private:
 	String _last_set_encoded_node_tree;
 
 	float _period = 64.f;
+	float _frequency = 1.f;
 
 	FractalType _fractal_type = FRACTAL_NONE;
 	int _fractal_octaves = 3;

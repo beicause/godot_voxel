@@ -112,6 +112,15 @@ float FastNoise2::get_period() const {
 	return _period;
 }
 
+void FastNoise2::set_frequency(float f) {
+	_frequency = f;
+	emit_changed();
+}
+
+float FastNoise2::get_frequency() const {
+	return _frequency;
+}
+
 void FastNoise2::set_fractal_octaves(int octaves) {
 	ERR_FAIL_COND(octaves <= 0);
 	if (octaves > MAX_OCTAVES) {
@@ -445,21 +454,21 @@ void FastNoise2::get_noise_2d_grid(Vector2 origin, Vector2i size, Span<float> ds
 	ERR_FAIL_COND(!is_valid());
 	ERR_FAIL_COND(size.x < 0 || size.y < 0);
 	ERR_FAIL_COND(dst.size() != size_t(size.x) * size_t(size.y));
-	_generator->GenUniformGrid2D(dst.data(), origin.x, origin.y, size.x, size.y, 1.f, _seed);
+	_generator->GenUniformGrid2D(dst.data(), origin.x, origin.y, size.x, size.y, _frequency, _seed);
 }
 
 void FastNoise2::get_noise_3d_grid(Vector3 origin, Vector3i size, Span<float> dst) const {
 	ERR_FAIL_COND(!is_valid());
 	ERR_FAIL_COND(!math::is_valid_size(size));
 	ERR_FAIL_COND(dst.size() != size_t(size.x) * size_t(size.y) * size_t(size.z));
-	_generator->GenUniformGrid3D(dst.data(), origin.x, origin.y, origin.z, size.x, size.y, size.z, 1.f, _seed);
+	_generator->GenUniformGrid3D(dst.data(), origin.x, origin.y, origin.z, size.x, size.y, size.z, _frequency, _seed);
 }
 
 void FastNoise2::get_noise_2d_grid_tileable(Vector2i size, Span<float> dst) const {
 	ERR_FAIL_COND(!is_valid());
 	ERR_FAIL_COND(size.x < 0 || size.y < 0);
 	ERR_FAIL_COND(dst.size() != size_t(size.x) * size_t(size.y));
-	_generator->GenTileable2D(dst.data(), size.x, size.y, 1.f, _seed);
+	_generator->GenTileable2D(dst.data(), size.x, size.y, _frequency, _seed);
 }
 
 void FastNoise2::generate_image(Ref<Image> image, bool tileable) const {
@@ -709,6 +718,9 @@ void FastNoise2::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_period", "period"), &FastNoise2::set_period);
 	ClassDB::bind_method(D_METHOD("get_period"), &FastNoise2::get_period);
 
+	ClassDB::bind_method(D_METHOD("set_frequency", "frequency"), &FastNoise2::set_frequency);
+	ClassDB::bind_method(D_METHOD("get_frequency"), &FastNoise2::get_frequency);
+
 	// ClassDB::bind_method(D_METHOD("set_warp_noise", "gradient_noise"), &FastNoise2::set_warp_noise);
 	// ClassDB::bind_method(D_METHOD("get_warp_noise"), &FastNoise2::get_warp_noise);
 
@@ -817,6 +829,12 @@ void FastNoise2::_bind_methods() {
 			PropertyInfo(Variant::FLOAT, "period", PROPERTY_HINT_RANGE, "0.0001,10000.0,0.1,exp"),
 			"set_period",
 			"get_period"
+	);
+
+	ADD_PROPERTY(
+			PropertyInfo(Variant::FLOAT, "frequency", PROPERTY_HINT_RANGE, ".0001,1,.0001,exp"),
+			"set_frequency",
+			"get_frequency"
 	);
 
 	// ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "warp_noise", PROPERTY_HINT_RESOURCE_TYPE, "FastNoiseLiteGradient"),
